@@ -7,12 +7,13 @@ import java.util.Random;
 import gash.router.container.RoutingConf;
 import gash.router.server.ServerState;
 import gash.router.server.edges.EdgeMonitor;
+import io.netty.channel.Channel;
 
 public class RaftManager implements Runnable {
 		private ServerState state;
 		private int nodeId = -1;
 		private int leaderId = -1;
-//		public Channel clientChannel;
+		public Channel clientChannel;
 
 		private String selfHost;
 		private RoutingConf conf;
@@ -21,7 +22,7 @@ public class RaftManager implements Runnable {
 		private long timerStart = 0;
 		// This servers states
 		private volatile RaftState CurrentState;
-//		public RaftState Leader;
+		public RaftState Leader;
 		public RaftState Candidate;
 		public RaftState Follower;
 
@@ -110,6 +111,9 @@ public class RaftManager implements Runnable {
 		public synchronized void setCurrentState(RaftState st) {
 			CurrentState = st;
 		}
+		public synchronized RaftState getCurrentState() {
+			return CurrentState;
+		}
 		
 		public synchronized EdgeMonitor getEdgeMonitor()
 		{
@@ -123,6 +127,11 @@ public class RaftManager implements Runnable {
 		public synchronized int getTerm()
 		{
 			return term;
+		}
+		
+		public synchronized void setLeaderId(int id)
+		{
+			leaderId=id;
 		}
 
 

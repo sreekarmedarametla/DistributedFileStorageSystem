@@ -109,27 +109,30 @@ public class WorkHandler extends SimpleChannelInboundHandler<WorkMessage> {
 //	        	emon.sendVote(wm);
 //	        	}
 	        	System.out.println("it should send you to follower");
-	        	FollowerState follower=new FollowerState();
-	        	follower.onRequestVoteRecieved(msg);
+	        	state.getManager().getCurrentState().onRequestVoteReceived(msg);
+	        	
 			}
-			/*else
+			
 				if(msg.hasVote()){
-					System.out.println(" im handling vote");		  
-		                int voterId = msg.getVote().getVoterID();
-		                logger.info("Vote Received from "+voterId );		               
-		                voteList.add(voterId);
-		                if (voteList.size() >= requiredVotes) {
-		                    state.setCurrentLeader(state.getConf().getNodeId());
-		                }
-		                System.out.println("Present Leader is "+state.getCurrentLeader());
+					System.out.println(" should send you to candidate's receivedVoteReply method");		  
+//		                int voterId = msg.getVote().getVoterID();
+//		                logger.info("Vote Received from "+voterId );		               
+//		                voteList.add(voterId);
+//		                if (voteList.size() >= requiredVotes) {
+//		                    state.setCurrentLeader(state.getConf().getNodeId());
+//		                }
+//		                System.out.println("Present Leader is "+state.getCurrentLeader());
+					state.getManager().getCurrentState().receivedVoteReply(msg);
 		            
-				}	
+				}
+				
 			else
 			if (msg.hasBeat()) {
 				System.out.println("im checking heartbeat");
-				Heartbeat hb = msg.getBeat();
-				logger.debug("heartbeat from " + msg.getHeader().getNodeId());
-			} else if (msg.hasPing()) {
+//				Heartbeat hb = msg.getBeat();
+//				logger.debug("heartbeat from " + msg.getHeader().getNodeId());
+				state.getManager().getCurrentState().receivedHeartBeat(msg);
+			} /*else if (msg.hasPing()) {
 				logger.info("ping from " + msg.getHeader().getNodeId());
 				boolean p = msg.getPing();
 				WorkMessage.Builder rb = WorkMessage.newBuilder();
@@ -145,10 +148,10 @@ public class WorkHandler extends SimpleChannelInboundHandler<WorkMessage> {
 				WorkState s = msg.getState();
 			}else if (msg.hasBody()) {
 					PrintUtil.printBody(msg.getBody());
-			}*/			
+			}	*/		
 			
 		} catch (NullPointerException e) {
-            logger.error("Null pointer has occured" + e.getMessage());
+            logger.error("Null pointer has occured from work handler logic" + e.getMessage());
         } catch (Exception e) {
 			// TODO add logging
 			Failure.Builder eb = Failure.newBuilder();

@@ -15,6 +15,8 @@ public interface RaftState {
 //
 //	public void replyVote(WorkMessage msg);
 //
-//	public void voteRequested(WorkMessage msg);
+	public void onRequestVoteReceived(WorkMessage msg);
+	public void receivedVoteReply(WorkMessage msg);
+	public void receivedHeartBeat(WorkMessage msg);
 
 }

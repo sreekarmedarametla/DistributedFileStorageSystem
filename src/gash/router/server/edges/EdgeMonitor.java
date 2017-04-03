@@ -36,7 +36,7 @@ import pipe.work.Work.Heartbeat;
 import pipe.work.Work.WorkMessage;
 import pipe.work.Work.WorkState;
 //import raft.Candidate;
-import raft.Leader;
+import raft.LeaderState;
 
 public class EdgeMonitor implements EdgeListener, Runnable {
 	protected static Logger logger = LoggerFactory.getLogger("edge monitor");
@@ -95,16 +95,21 @@ public class EdgeMonitor implements EdgeListener, Runnable {
     }
 	
 	@Override
+	//it will be taken care by leader
 	public void run() {
 		while (forever) {
-			Leader l=new Leader(state);
-			sendMessage(l.createHB());
-			//sendMessage(createWorkBody());
-			//for testing only
-			//Candidate cd=new Candidate(state);
-			//sendMessage(cd.RequestVote());
-			//sendMessage(Vote());
-		}
+//			LeaderState l=new LeaderState(state);
+//			sendMessage(l.createHB());
+//			//sendMessage(createWorkBody());
+//			//for testing only
+//			//Candidate cd=new Candidate(state);
+//			//sendMessage(cd.RequestVote());
+//			//sendMessage(Vote());
+			WorkMessage wmsg=createWorkMessage();
+			sendMessage(wmsg);
+			
+			
+	}
 	}
 	public void sendMessage(WorkMessage wmsg){
 		try {
@@ -126,7 +131,7 @@ public class EdgeMonitor implements EdgeListener, Runnable {
                             
                             this.inboundEdges.addNode(ei.getRef(), ei.getHost(), ei.getPort());
                             logger.info("connected to edge" + ei.getRef());
-                            WorkMessage wm = wmsg;
+                            WorkMessage wm =  wmsg;
     						ei.getChannel().writeAndFlush(wm);
                         } else {
                             if (this.inboundEdges.hasNode(ei.getRef())) {
@@ -143,6 +148,40 @@ public class EdgeMonitor implements EdgeListener, Runnable {
 			e.printStackTrace();
 		}
 	}
+	
+	
+	private WorkMessage createWorkMessage() {
+		WorkState.Builder sb = WorkState.newBuilder();
+		sb.setEnqueued(-1);
+		sb.setProcessed(-1);
+
+		Heartbeat.Builder bb = Heartbeat.newBuilder();
+		bb.setState(sb);
+
+		Header.Builder hb = Header.newBuilder();
+		hb.setNodeId(state.getConf().getNodeId());
+		hb.setDestination(-1);
+		hb.setTime(System.currentTimeMillis());
+
+		WorkMessage.Builder wb = WorkMessage.newBuilder();
+		wb.setHeader(hb);
+		wb.setBeat(bb);
+		wb.setSecret(1);
+
+
+		return wb.build();
+	}
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	public void sendVote(WorkMessage wmsg){
 		try {
 			for (EdgeInfo ei : this.outboundEdges.map.values()) {	

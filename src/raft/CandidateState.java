@@ -50,6 +50,7 @@ public class CandidateState implements RaftState{
 	private RaftManager Manager;
 	private int voteCount=0;
 	private int candidateId;
+	private int votedFor=-1;
 	private int activeCount=0;
 	
 	public void process(){
@@ -90,8 +91,11 @@ public class CandidateState implements RaftState{
 		voteCount++;
 		for(EdgeInfo ei:Manager.getEdgeMonitor().getOutBoundEdges().map.values())
 		{
+			
 			if(ei.isActive()&&ei.getChannel()!=null)
 			{
+				System.out.println("reached here"); 
+				
 				System.out.println("voteRequest sent to"+ei.getRef());
 				
 				Header.Builder hb = Header.newBuilder();
@@ -107,7 +111,7 @@ public class CandidateState implements RaftState{
 				wb.setReqvote(rvb);
 				wb.setSecret(10);	
 				
-			  System.out.println("sening requestVotes to all");
+			     System.out.println("sending requestVotes to all");
 				 Manager.getEdgeMonitor().sendMessage(wb.build());		
 				
 			}
@@ -115,6 +119,42 @@ public class CandidateState implements RaftState{
 		}
 		return;		
 	}
+	
+	
+	//if somebody requests vote of candidate
+	@Override
+	public synchronized void onRequestVoteReceived(WorkMessage msg) {
+		// TODO Auto-generated method stub
+		System.out.println("Candidates Vote requested by "+msg.getHeader().getNodeId());
+		if (msg.getReqvote().getCurrentTerm() > Manager.getTerm()) {
+			votedFor = -1;
+			Manager.randomizeElectionTimeout();			
+			Manager.setCurrentState(Manager.Follower);
+			Manager.getCurrentState().onRequestVoteReceived(msg);
+			
+		} 
+	}
+	
+	//received vote
+	@Override
+	public synchronized void receivedVoteReply(WorkMessage msg)
+	{
+		System.out.println("received vote from: "+msg.getHeader().getNodeId()+" to me");
+		voteCount++;
+		if(voteCount>(activeCount/2))
+		{
+			Manager.randomizeElectionTimeout();
+			System.out.println("Leader Elected and the Node Id is "+ Manager.getNodeId()+"total active nodes is"+activeCount);
+			Manager.setLeaderId(Manager.getNodeId());
+			votedFor=-1;
+			activeCount=0;
+			Manager.setCurrentState(Manager.Leader);
+		}
+	}
+	
+	
+	
+	
 		
 	
 		@Override
@@ -125,6 +165,16 @@ public class CandidateState implements RaftState{
 		@Override
 		public synchronized RaftManager getManager() {
 			return Manager;
+		}
+		
+		@Override
+		public synchronized void receivedHeartBeat(WorkMessage msg)
+		{
+			System.out.println("i turned follower now");
+			Manager.setCurrentState(Manager.Follower);
+			Manager.randomizeElectionTimeout();
+			System.out.println("Leader Elected. Leader is : " + msg.getHeader().getNodeId());
+			Manager.getCurrentState().receivedHeartBeat(msg);
 		}
 	
 	
